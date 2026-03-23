@@ -1,0 +1,22 @@
+llm:
+  model: "claude-sonnet-4-20250514"
+  max_tokens_per_request: 4096
+  batch_size: 12
+  max_concurrent_batches: 3
+  temperature: 0.3
+
+report:
+  max_github_repos: 10
+  max_news_items: 15
+  max_papers: 10
+  max_social_items: 10
+  min_importance_score: 3.0
+
+publishing:
+  reports_repo: ""  # Override via REPORTS_REPO env var
+  branch: "main"
+  commit_message_template: "Add daily report for {date}"
+
+general:
+  timezone: "UTC"
+  log_level: "INFO"

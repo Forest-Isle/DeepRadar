@@ -1,0 +1,44 @@
+name: Daily AI News Report
+
+on:
+  schedule:
+    # Run at 06:00 UTC daily (14:00 Beijing Time)
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout DeepRadar
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate and publish daily report
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.REPORTS_REPO_TOKEN }}
+          REPORTS_REPO_TOKEN: ${{ secrets.REPORTS_REPO_TOKEN }}
+          REPORTS_REPO: ${{ vars.REPORTS_REPO }}
+        run: python -m deepradar.main
+
+      - name: Upload report artifact (backup)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ github.run_id }}
+          path: output/
+          retention-days: 7

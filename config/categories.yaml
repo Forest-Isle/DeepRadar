@@ -1,0 +1,36 @@
+categories:
+  - name: "LLM / Foundation Models"
+    keywords: ["llm", "large language model", "gpt", "claude", "gemini", "llama", "mistral", "transformer", "attention", "fine-tuning", "rlhf", "dpo", "prompt", "reasoning", "chain-of-thought"]
+    weight: 1.2
+  - name: "Computer Vision"
+    keywords: ["computer vision", "image", "video", "diffusion", "stable diffusion", "midjourney", "dall-e", "object detection", "segmentation", "multimodal", "vision"]
+    weight: 1.0
+  - name: "NLP"
+    keywords: ["nlp", "natural language", "text", "sentiment", "translation", "summarization", "ner", "parsing", "embedding"]
+    weight: 1.0
+  - name: "AI Safety & Alignment"
+    keywords: ["safety", "alignment", "interpretability", "jailbreak", "red team", "responsible ai", "bias", "fairness", "constitutional ai", "guardrail"]
+    weight: 1.3
+  - name: "Robotics & Embodied AI"
+    keywords: ["robotics", "embodied", "manipulation", "locomotion", "sim-to-real", "autonomous"]
+    weight: 1.0
+  - name: "AI Infrastructure & MLOps"
+    keywords: ["mlops", "training", "inference", "gpu", "tpu", "distributed", "quantization", "pruning", "deployment", "serving", "vllm", "triton", "cuda"]
+    weight: 0.9
+  - name: "AI Products & Applications"
+    keywords: ["product", "launch", "release", "api", "chatbot", "assistant", "copilot", "agent", "tool"]
+    weight: 1.1
+  - name: "Research Breakthrough"
+    keywords: ["breakthrough", "state-of-the-art", "sota", "novel", "benchmark", "outperform"]
+    weight: 1.4
+  - name: "Open Source"
+    keywords: ["open source", "open-source", "weights", "model card", "huggingface", "github"]
+    weight: 1.1
+  - name: "Industry News"
+    keywords: ["funding", "acquisition", "partnership", "regulation", "policy", "lawsuit", "ipo", "valuation", "hiring"]
+    weight: 0.8
+
+ai_relevance_keywords:
+  high: ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "claude", "gemini"]
+  medium: ["model", "training", "inference", "dataset", "benchmark", "transformer", "diffusion", "embedding"]
+  low: ["automation", "data science", "analytics"]

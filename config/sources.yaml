@@ -1,0 +1,89 @@
+github_trending:
+  enabled: true
+  url: "https://github.com/trending"
+  periods: ["daily"]
+  ai_topics:
+    - "machine-learning"
+    - "deep-learning"
+    - "artificial-intelligence"
+    - "natural-language-processing"
+    - "computer-vision"
+    - "llm"
+    - "generative-ai"
+    - "transformer"
+    - "diffusion"
+    - "reinforcement-learning"
+  min_stars_today: 10
+
+hackernews:
+  enabled: true
+  top_stories_url: "https://hacker-news.firebaseio.com/v0/topstories.json"
+  item_url_template: "https://hacker-news.firebaseio.com/v0/item/{id}.json"
+  max_stories_to_check: 200
+  min_score: 30
+
+arxiv:
+  enabled: true
+  base_url: "http://export.arxiv.org/api/query"
+  categories: ["cs.AI", "cs.CL", "cs.LG", "cs.CV"]
+  max_results: 100
+  lookback_hours: 48
+
+rss_blogs:
+  enabled: true
+  feeds:
+    - name: "OpenAI Blog"
+      url: "https://openai.com/blog/rss.xml"
+    - name: "Anthropic Blog"
+      url: "https://www.anthropic.com/feed.xml"
+    - name: "Google AI Blog"
+      url: "https://blog.google/technology/ai/rss/"
+    - name: "DeepMind Blog"
+      url: "https://deepmind.google/blog/rss.xml"
+    - name: "Meta AI Blog"
+      url: "https://ai.meta.com/blog/rss/"
+    - name: "Hugging Face Blog"
+      url: "https://huggingface.co/blog/feed.xml"
+    - name: "Microsoft AI Blog"
+      url: "https://blogs.microsoft.com/ai/feed/"
+    - name: "NVIDIA AI Blog"
+      url: "https://blogs.nvidia.com/blog/category/deep-learning/feed/"
+  lookback_hours: 48
+
+twitter_rss:
+  enabled: true
+  nitter_instances:
+    - "https://nitter.net"
+    - "https://nitter.privacydev.net"
+    - "https://nitter.poast.org"
+  accounts:
+    - "OpenAI"
+    - "AnthropicAI"
+    - "GoogleAI"
+    - "ylecun"
+    - "kaboregoodluck"
+  lookback_hours: 48
+
+reddit_rss:
+  enabled: true
+  subreddits:
+    - "MachineLearning"
+    - "artificial"
+    - "LocalLLaMA"
+    - "ChatGPT"
+    - "singularity"
+  user_agent: "DeepRadar/1.0 (AI News Aggregator)"
+  lookback_hours: 48
+
+youtube_rss:
+  enabled: true
+  channels:
+    - name: "Two Minute Papers"
+      channel_id: "UCbfYPyITQ-7l4upoX8nvctg"
+    - name: "Yannic Kilcher"
+      channel_id: "UCZHmQk67mSJgfCCTn7xBfew"
+    - name: "AI Explained"
+      channel_id: "UCNJ1Ymd5yFuUPtn21xtRbbw"
+    - name: "Matt Wolfe"
+      channel_id: "UCJMuGG_MrFz2IG9lQG5y7WQ"
+  lookback_hours: 48
