@@ -41,6 +41,7 @@ class ProcessedNewsItem(BaseModel):
     tags: list[str] = Field(default_factory=list)
     why_it_matters: str = ""
     why_it_matters_zh: str = ""
+    is_agent_related: bool = False
 
 
 class SourceResult(BaseModel):
