@@ -18,7 +18,8 @@ class LLMClient:
         self.model = llm_cfg.get("model", "claude-sonnet-4-20250514")
         self.max_tokens = llm_cfg.get("max_tokens_per_request", 4096)
         self.temperature = llm_cfg.get("temperature", 0.3)
-        self.client = anthropic.Anthropic(api_key=api_key)
+        base_url = llm_cfg.get("base_url") or None
+        self.client = anthropic.Anthropic(api_key=api_key, base_url=base_url)
         self.total_input_tokens = 0
         self.total_output_tokens = 0
 

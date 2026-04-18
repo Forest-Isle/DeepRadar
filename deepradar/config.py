@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
 
+load_dotenv()
 
 _config: dict[str, Any] | None = None
 
@@ -44,6 +46,9 @@ def load_config(config_dir: Path | None = None) -> dict[str, Any]:
         "DEEPRADAR_WEBHOOK_URL",
         cfg["settings"].get("notifications", {}).get("webhook_url", ""),
     )
+    cfg["settings"].setdefault("llm", {})
+    if base_url := os.environ.get("ANTHROPIC_BASE_URL"):
+        cfg["settings"]["llm"]["base_url"] = base_url
 
     _config = cfg
     return cfg
