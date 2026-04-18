@@ -25,7 +25,7 @@ hackernews:
 arxiv:
   enabled: true
   base_url: "http://export.arxiv.org/api/query"
-  categories: ["cs.AI", "cs.CL", "cs.LG", "cs.CV"]
+  categories: ["cs.AI", "cs.CL", "cs.LG", "cs.CV", "cs.MA"]
   max_results: 100
   lookback_hours: 48
 
@@ -48,6 +48,10 @@ rss_blogs:
       url: "https://blogs.microsoft.com/ai/feed/"
     - name: "NVIDIA AI Blog"
       url: "https://blogs.nvidia.com/blog/category/deep-learning/feed/"
+    - name: "LangChain Blog"
+      url: "https://blog.langchain.dev/rss/"
+    - name: "AutoGen Blog"
+      url: "https://microsoft.github.io/autogen/blog/rss.xml"
   lookback_hours: 48
 
 twitter_rss:

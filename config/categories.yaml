@@ -29,6 +29,29 @@ categories:
   - name: "Industry News"
     keywords: ["funding", "acquisition", "partnership", "regulation", "policy", "lawsuit", "ipo", "valuation", "hiring"]
     weight: 0.8
+  - name: "AI Agent"
+    keywords:
+      - "agent"
+      - "multi-agent"
+      - "agentic"
+      - "autonomous agent"
+      - "tool use"
+      - "tool calling"
+      - "function calling"
+      - "langchain"
+      - "langgraph"
+      - "autogpt"
+      - "crewai"
+      - "autogen"
+      - "memory"
+      - "planning"
+      - "reflection"
+      - "mcp"
+      - "model context protocol"
+      - "agent framework"
+      - "agent benchmark"
+      - "agentbench"
+    weight: 1.5
 
 ai_relevance_keywords:
   high: ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "claude", "gemini"]
