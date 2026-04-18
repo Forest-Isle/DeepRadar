@@ -13,6 +13,7 @@ class SourceType(str, Enum):
     ARXIV = "arxiv"
     RSS_BLOG = "rss_blog"
     TWITTER = "twitter"
+    BLUESKY = "bluesky"
     REDDIT = "reddit"
     YOUTUBE = "youtube"
 
