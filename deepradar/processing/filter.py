@@ -55,6 +55,17 @@ def _compute_relevance_score(item: RawNewsItem, categories_cfg: dict[str, Any]) 
     return score
 
 
+def _is_agent_related(item: RawNewsItem, categories_cfg: dict[str, Any]) -> bool:
+    """Return True if item matches any keyword in the AI Agent category."""
+    text = f"{item.title} {item.content}".lower()
+    for cat in categories_cfg.get("categories", []):
+        if cat.get("name") == "AI Agent":
+            for kw in cat.get("keywords", []):
+                if kw in text:
+                    return True
+    return False
+
+
 def filter_relevant(
     items: list[RawNewsItem],
     config: dict[str, Any],
@@ -68,6 +79,7 @@ def filter_relevant(
         rel_score = _compute_relevance_score(item, categories_cfg)
         if rel_score >= min_score:
             item.metadata["relevance_score"] = rel_score
+            item.metadata["is_agent_related"] = _is_agent_related(item, categories_cfg)
             scored.append((rel_score, item))
 
     # Sort by relevance score descending
