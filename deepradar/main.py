@@ -131,7 +131,13 @@ async def run(args: argparse.Namespace | None = None) -> None:
     else:
         logger.warning("No ANTHROPIC_API_KEY set. Generating report without LLM enrichment.")
         from deepradar.processing.models import ProcessedNewsItem
-        processed = [ProcessedNewsItem(raw=item) for item in filtered]
+        processed = [
+            ProcessedNewsItem(
+                raw=item,
+                is_agent_related=item.metadata.get("is_agent_related", False),
+            )
+            for item in filtered
+        ]
         headline = {
             "headline_en": "AI Daily Report",
             "headline_zh": "AI 每日报告",

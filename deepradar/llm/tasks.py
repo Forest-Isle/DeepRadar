@@ -89,7 +89,7 @@ async def batch_summarize(
                 logger.error(f"LLM batch processing failed after 3 attempts: {last_exc}")
                 async with lock:
                     for raw in batch:
-                        results.append(ProcessedNewsItem(raw=raw))
+                        results.append(ProcessedNewsItem(raw=raw, is_agent_related=raw.metadata.get("is_agent_related", False)))
                 return
 
             batch_results = []
@@ -101,6 +101,7 @@ async def batch_summarize(
                 batch_results.append(
                     ProcessedNewsItem(
                         raw=raw,
+                        is_agent_related=raw.metadata.get("is_agent_related", False),
                         summary_en=entry.get("summary_en", ""),
                         summary_zh=entry.get("summary_zh", ""),
                         category=entry.get("category", "Other"),
