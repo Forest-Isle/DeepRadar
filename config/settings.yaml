@@ -20,3 +20,8 @@ publishing:
 general:
   timezone: "UTC"
   log_level: "INFO"
+
+notifications:
+  webhook_url: ""  # Override via DEEPRADAR_WEBHOOK_URL env var
+  on_success: true
+  on_failure: true
