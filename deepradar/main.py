@@ -97,7 +97,8 @@ async def run() -> None:
 
     # Step 2: Deduplicate and filter
     deduped = deduplicate(raw_items)
-    filtered = filter_relevant(deduped, config)
+    min_score = config.get("settings", {}).get("report", {}).get("min_importance_score", 2.0)
+    filtered = filter_relevant(deduped, config, min_score=min_score)
     logger.info(f"After processing: {len(filtered)} items")
 
     # Step 3: LLM enrichment
