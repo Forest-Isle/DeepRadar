@@ -15,6 +15,7 @@ from deepradar.processing.dedup import deduplicate
 from deepradar.processing.filter import filter_relevant
 from deepradar.processing.models import RawNewsItem, SourceResult
 from deepradar.publish.github_publisher import publish_report
+from deepradar.report.agent_report import generate_agent_report
 from deepradar.report.generator import generate_report
 from deepradar.sources.arxiv_papers import ArxivSource
 from deepradar.sources.github_trending import GitHubTrendingSource
@@ -158,8 +159,18 @@ async def run(args: argparse.Namespace | None = None) -> None:
     report_md = generate_report(processed, today, headline, stats, config)
     logger.info(f"Report generated: {len(report_md)} characters")
 
+    agent_report_md = generate_agent_report(processed, today)
+
     # Step 5: Publish
     publish_report(report_md, today, config)
+
+    # Write standalone agent report
+    from pathlib import Path
+    output_dir = Path(config.get("settings", {}).get("output_dir", "output"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    agent_report_path = output_dir / f"agent-{today}.md"
+    agent_report_path.write_text(agent_report_md, encoding="utf-8")
+    logger.info(f"Agent report written to {agent_report_path}")
 
     # Step 6: Notify
     webhook_url = config.get("settings", {}).get("webhook_url", "")
