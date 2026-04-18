@@ -11,7 +11,7 @@ from deepradar.llm.client import LLMClient
 from deepradar.llm.tasks import batch_summarize, enrich_github_repos, generate_headline
 from deepradar.processing.dedup import deduplicate
 from deepradar.processing.filter import filter_relevant
-from deepradar.processing.models import RawNewsItem
+from deepradar.processing.models import RawNewsItem, SourceResult
 from deepradar.publish.github_publisher import publish_report
 from deepradar.report.generator import generate_report
 from deepradar.sources.arxiv_papers import ArxivSource
@@ -57,23 +57,25 @@ def _init_sources(config: dict[str, Any]) -> list:
     return sources
 
 
-async def _collect_all(sources: list) -> tuple[list[RawNewsItem], int]:
-    """Fetch from all sources concurrently. Returns items and active source count."""
+async def _collect_all(sources: list) -> tuple[list[RawNewsItem], list[SourceResult]]:
+    """Fetch from all sources concurrently. Returns items and per-source results."""
     tasks = [src.fetch() for src in sources]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_items: list[RawNewsItem] = []
-    active = 0
+    source_results: list[SourceResult] = []
+
     for src, result in zip(sources, results):
         if isinstance(result, Exception):
             logger.error(f"Source {src.name} raised exception: {result}")
+            source_results.append(SourceResult(name=src.name, error=str(result)))
         elif result:
             all_items.extend(result)
-            active += 1
+            source_results.append(SourceResult(name=src.name, item_count=len(result)))
         else:
-            active += 1  # Returned empty but didn't fail
+            source_results.append(SourceResult(name=src.name, item_count=0))
 
-    return all_items, active
+    return all_items, source_results
 
 
 async def run() -> None:
@@ -87,8 +89,9 @@ async def run() -> None:
     sources = _init_sources(config)
     logger.info(f"Initialized {len(sources)} sources")
 
-    raw_items, sources_active = await _collect_all(sources)
+    raw_items, source_results = await _collect_all(sources)
     total_collected = len(raw_items)
+    sources_active = sum(1 for r in source_results if r.error is None)
     logger.info(f"Collected {total_collected} raw items from {sources_active}/{len(sources)} sources")
 
     if not raw_items:
@@ -132,6 +135,7 @@ async def run() -> None:
         "sources_total": len(sources),
         "items_filtered": len(filtered),
         "tokens_used": usage.get("total_tokens", 0),
+        "source_results": source_results,
     }
     report_md = generate_report(processed, today, headline, stats, config)
     logger.info(f"Report generated: {len(report_md)} characters")
