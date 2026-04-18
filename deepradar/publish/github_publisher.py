@@ -25,7 +25,7 @@ def publish_report(
 
     if not reports_repo:
         # Fallback: save locally
-        output_dir = Path("output")
+        output_dir = Path(config.get("settings", {}).get("output_dir", "output"))
         output_dir.mkdir(exist_ok=True)
         output_path = output_dir / f"{date_str}.md"
         output_path.write_text(report_md, encoding="utf-8")
@@ -64,7 +64,7 @@ def publish_report(
         except Exception as e:
             logger.error(f"Failed to publish report: {e}")
             # Save locally as fallback
-            output_dir = Path("output")
+            output_dir = Path(config.get("settings", {}).get("output_dir", "output"))
             output_dir.mkdir(exist_ok=True)
             output_path = output_dir / f"{date_str}.md"
             output_path.write_text(report_md, encoding="utf-8")

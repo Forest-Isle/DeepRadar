@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import sys
@@ -79,11 +80,21 @@ async def _collect_all(sources: list) -> tuple[list[RawNewsItem], list[SourceRes
     return all_items, source_results
 
 
-async def run() -> None:
-    config = load_config()
+async def run(args: argparse.Namespace | None = None) -> None:
+    if args and args.config_dir:
+        from pathlib import Path
+        from deepradar.config import reset_config
+        reset_config()
+        config = load_config(Path(args.config_dir))
+    else:
+        config = load_config()
+
+    if args:
+        _apply_cli_overrides(config, args)
+
     _setup_logging(config)
 
-    today = date.today().isoformat()
+    today = args.date if (args and args.date) else date.today().isoformat()
     logger.info(f"=== DeepRadar Daily Report: {today} ===")
 
     # Step 1: Collect from all sources
@@ -161,8 +172,45 @@ async def run() -> None:
     logger.info("=== Done ===")
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="deepradar",
+        description="DeepRadar — AI News Sniffer. Generate daily AI news reports.",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Save report locally only, don't publish")
+    parser.add_argument("--sources", type=str, default="", help="Comma-separated source names to enable (e.g. hackernews,arxiv)")
+    parser.add_argument("--date", type=str, default="", help="Override report date (YYYY-MM-DD)")
+    parser.add_argument("--output-dir", type=str, default="", help="Override output directory")
+    parser.add_argument("--config-dir", type=str, default="", help="Override config directory")
+    parser.add_argument("--verbose", action="store_true", help="Set log level to DEBUG")
+    parser.add_argument("--no-llm", action="store_true", help="Skip LLM enrichment")
+    return parser.parse_args()
+
+
+def _apply_cli_overrides(config: dict[str, Any], args: argparse.Namespace) -> None:
+    """Apply CLI argument overrides to the loaded config."""
+    if args.dry_run:
+        config["settings"]["reports_repo"] = ""
+
+    if args.sources:
+        enabled_names = {s.strip() for s in args.sources.split(",")}
+        for src_name, src_cfg in config.get("sources", {}).items():
+            if isinstance(src_cfg, dict):
+                src_cfg["enabled"] = src_name in enabled_names
+
+    if args.verbose:
+        config.setdefault("settings", {}).setdefault("general", {})["log_level"] = "DEBUG"
+
+    if args.no_llm:
+        config["settings"]["anthropic_api_key"] = ""
+
+    if args.output_dir:
+        config["settings"]["output_dir"] = args.output_dir
+
+
 def main() -> None:
-    asyncio.run(run())
+    args = _parse_args()
+    asyncio.run(run(args))
 
 
 if __name__ == "__main__":
