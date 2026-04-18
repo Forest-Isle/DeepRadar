@@ -7,27 +7,11 @@ from typing import Any
 import aiohttp
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
+from deepradar.processing.keywords import is_ai_related
 from deepradar.processing.models import RawNewsItem, SourceType
 from deepradar.sources.base import BaseSource
 
 logger = logging.getLogger(__name__)
-
-AI_KEYWORDS = {
-    "ai", "artificial intelligence", "machine learning", "deep learning",
-    "neural", "llm", "gpt", "claude", "gemini", "transformer", "diffusion",
-    "nlp", "computer vision", "reinforcement learning", "rl", "rlhf",
-    "fine-tun", "embedding", "vector", "rag", "agent", "multimodal",
-    "generative", "foundation model", "open source model", "benchmark",
-    "training", "inference", "gpu", "robotics", "autonomous", "chatbot",
-    "copilot", "openai", "anthropic", "google ai", "meta ai", "hugging face",
-    "stable diffusion", "midjourney", "dall-e", "whisper", "sam",
-    "langchain", "llamaindex", "vllm", "ollama", "mistral", "llama",
-}
-
-
-def _is_ai_related(title: str, text: str = "") -> bool:
-    combined = f"{title} {text}".lower()
-    return any(kw in combined for kw in AI_KEYWORDS)
 
 
 class HackerNewsSource(BaseSource):
@@ -79,7 +63,7 @@ class HackerNewsSource(BaseSource):
                     title = story.get("title", "")
                     if score < min_score:
                         continue
-                    if not _is_ai_related(title):
+                    if not is_ai_related(title, "", self.config):
                         continue
 
                     url = story.get("url", f"https://news.ycombinator.com/item?id={story['id']}")

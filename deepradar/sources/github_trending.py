@@ -8,9 +8,9 @@ import aiohttp
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
+from deepradar.processing.keywords import is_ai_related
 from deepradar.processing.models import RawNewsItem, SourceType
 from deepradar.sources.base import BaseSource
-from deepradar.sources.hackernews import AI_KEYWORDS, _is_ai_related
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class GitHubTrendingSource(BaseSource):
                 # Filter
                 if stars_today < min_stars_today:
                     continue
-                if not _is_ai_related(repo_path, description):
+                if not is_ai_related(repo_path, description, self.config):
                     continue
 
                 items.append(
