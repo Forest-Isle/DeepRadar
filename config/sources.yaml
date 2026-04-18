@@ -77,6 +77,10 @@ reddit_rss:
 
 youtube_rss:
   enabled: true
+  invidious_instances:
+    - "https://inv.nadeko.net"
+    - "https://invidious.io.lol"
+    - "https://yt.cdaut.de"
   channels:
     - name: "Two Minute Papers"
       channel_id: "UCbfYPyITQ-7l4upoX8nvctg"
