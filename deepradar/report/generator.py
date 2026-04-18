@@ -166,6 +166,19 @@ def generate_report(
                 )
             md += "\n"
 
+    # AI Agent 专题板块
+    agent_items = _sort_by_importance([i for i in items if i.is_agent_related])
+    if agent_items:
+        md += "\n---\n\n## 🤖 AI Agent 专题 / Agent Focus\n\n"
+        for item in agent_items[:10]:
+            source = item.raw.source_name
+            summary = item.summary_zh or item.summary_en or ""
+            md += f"- **[{item.raw.title}]({item.raw.url})** ({source})"
+            if summary:
+                md += f" — {summary}"
+            md += "\n"
+        md += "\n"
+
     # Footer
     source_results: list[SourceResult] = stats.get("source_results", [])
     source_status = ""

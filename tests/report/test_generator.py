@@ -88,3 +88,31 @@ def test_report_respects_max_items():
     }
     md = generate_report(items, "2026-04-18", HEADLINE, {}, config)
     assert md.count("###") <= 6
+
+
+def test_report_contains_agent_section_when_agent_items_present():
+    from deepradar.processing.models import ProcessedNewsItem, RawNewsItem, SourceType
+    items = []
+    for i in range(3):
+        item = ProcessedNewsItem(
+            raw=RawNewsItem(
+                source=SourceType.RSS_BLOG,
+                source_name="blog",
+                title=f"Agent item {i}",
+                url="https://example.com",
+            ),
+            summary_en=f"Summary {i}",
+            summary_zh=f"摘要 {i}",
+            importance_score=float(5 - i),
+            category="AI Agent",
+            is_agent_related=True,
+        )
+        items.append(item)
+    md = generate_report(items, "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
+    assert "AI Agent 专题" in md
+    assert "Agent item 0" in md
+
+
+def test_report_no_agent_section_when_no_agent_items():
+    md = generate_report([], "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
+    assert "AI Agent 专题" not in md
