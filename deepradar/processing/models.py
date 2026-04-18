@@ -40,3 +40,11 @@ class ProcessedNewsItem(BaseModel):
     tags: list[str] = Field(default_factory=list)
     why_it_matters: str = ""
     why_it_matters_zh: str = ""
+
+
+class SourceResult(BaseModel):
+    """Result of a single source fetch — used for run summary."""
+
+    name: str
+    item_count: int = 0
+    error: str | None = None
