@@ -54,18 +54,14 @@ rss_blogs:
       url: "https://microsoft.github.io/autogen/blog/rss.xml"
   lookback_hours: 48
 
-twitter_rss:
+bluesky:
   enabled: true
-  nitter_instances:
-    - "https://nitter.net"
-    - "https://nitter.privacydev.net"
-    - "https://nitter.poast.org"
   accounts:
-    - "OpenAI"
-    - "AnthropicAI"
-    - "GoogleAI"
-    - "ylecun"
-    - "kaboregoodluck"
+    - "openai.com"
+    - "anthropic.com"
+    - "ylecun.bsky.social"
+    - "karpathy.bsky.social"
+    - "goodside.bsky.social"
   lookback_hours: 48
 
 reddit_rss:

@@ -21,7 +21,7 @@ from deepradar.sources.github_trending import GitHubTrendingSource
 from deepradar.sources.hackernews import HackerNewsSource
 from deepradar.sources.reddit_rss import RedditRssSource
 from deepradar.sources.rss_blogs import RssBlogsSource
-from deepradar.sources.twitter_rss import TwitterRssSource
+from deepradar.sources.bluesky import BlueskySource
 from deepradar.sources.youtube_rss import YouTubeRssSource
 
 logger = logging.getLogger("deepradar")
@@ -46,7 +46,7 @@ def _init_sources(config: dict[str, Any]) -> list:
         GitHubTrendingSource,
         RedditRssSource,
         YouTubeRssSource,
-        TwitterRssSource,
+        BlueskySource,
     ]
     sources = []
     for cls in source_classes:
