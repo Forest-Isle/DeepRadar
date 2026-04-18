@@ -4,6 +4,8 @@ import json
 import logging
 from typing import Any
 
+from json_repair import repair_json
+
 from deepradar.llm.client import LLMClient
 from deepradar.llm.prompts import (
     BATCH_SUMMARIZE_PROMPT,
@@ -15,15 +17,27 @@ from deepradar.processing.models import ProcessedNewsItem, RawNewsItem, SourceTy
 
 logger = logging.getLogger(__name__)
 
+_RETRY_SUFFIX = "\n\nIMPORTANT: Respond ONLY with a valid JSON array. No explanation, no markdown, no extra text."
+
 
 def _parse_json(text: str) -> Any:
-    """Try to parse JSON, stripping markdown fences if present."""
+    """Try to parse JSON, stripping markdown fences. Falls back to json-repair."""
     text = text.strip()
     if text.startswith("```"):
         lines = text.split("\n")
         lines = [l for l in lines if not l.strip().startswith("```")]
-        text = "\n".join(lines)
-    return json.loads(text)
+        text = "\n".join(lines).strip()
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    repaired = repair_json(text, return_objects=True)
+    if repaired is not None and repaired != "" and repaired != [] and repaired != {}:
+        return repaired
+
+    raise ValueError(f"Could not parse JSON even after repair: {text[:200]!r}")
 
 
 def _items_to_json(items: list[RawNewsItem]) -> str:
@@ -45,7 +59,7 @@ async def batch_summarize(
     batch_size: int = 12,
     max_concurrent: int = 3,
 ) -> list[ProcessedNewsItem]:
-    """Process items through Claude API in concurrent batches."""
+    """Process items through LLM API in concurrent batches."""
     import asyncio
 
     sem = asyncio.Semaphore(max_concurrent)
@@ -55,38 +69,50 @@ async def batch_summarize(
     async def _process_batch(batch: list[RawNewsItem], batch_num: int) -> None:
         async with sem:
             items_json = _items_to_json(batch)
-            prompt = BATCH_SUMMARIZE_PROMPT.format(items_json=items_json)
+            base_prompt = BATCH_SUMMARIZE_PROMPT.format(items_json=items_json)
 
-            try:
-                response = await asyncio.to_thread(client.complete, SYSTEM_PROMPT, prompt)
-                parsed = _parse_json(response)
+            parsed = None
+            last_exc: Exception | None = None
 
-                batch_results = []
-                for entry in parsed:
-                    idx = entry.get("index", 0)
-                    if idx >= len(batch):
-                        continue
-                    raw = batch[idx]
-                    batch_results.append(
-                        ProcessedNewsItem(
-                            raw=raw,
-                            summary_en=entry.get("summary_en", ""),
-                            summary_zh=entry.get("summary_zh", ""),
-                            category=entry.get("category", "Other"),
-                            importance_score=float(entry.get("importance_score", 5.0)),
-                            tags=entry.get("tags", []),
-                            why_it_matters=entry.get("why_it_matters", ""),
-                            why_it_matters_zh=entry.get("why_it_matters_zh", ""),
-                        )
-                    )
-                logger.info(f"Batch {batch_num}: processed {len(parsed)} items")
-                async with lock:
-                    results.extend(batch_results)
-            except Exception as e:
-                logger.error(f"LLM batch processing failed: {e}")
+            for attempt in range(3):  # 1 initial + 2 retries
+                prompt = base_prompt if attempt == 0 else base_prompt + _RETRY_SUFFIX
+                try:
+                    response = await asyncio.to_thread(client.complete, SYSTEM_PROMPT, prompt)
+                    parsed = _parse_json(response)
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        logger.warning(f"Batch {batch_num} attempt {attempt + 1} failed: {exc}. Retrying...")
+
+            if parsed is None:
+                logger.error(f"LLM batch processing failed after 3 attempts: {last_exc}")
                 async with lock:
                     for raw in batch:
                         results.append(ProcessedNewsItem(raw=raw))
+                return
+
+            batch_results = []
+            for entry in parsed:
+                idx = entry.get("index", 0)
+                if idx >= len(batch):
+                    continue
+                raw = batch[idx]
+                batch_results.append(
+                    ProcessedNewsItem(
+                        raw=raw,
+                        summary_en=entry.get("summary_en", ""),
+                        summary_zh=entry.get("summary_zh", ""),
+                        category=entry.get("category", "Other"),
+                        importance_score=float(entry.get("importance_score", 5.0)),
+                        tags=entry.get("tags", []),
+                        why_it_matters=entry.get("why_it_matters", ""),
+                        why_it_matters_zh=entry.get("why_it_matters_zh", ""),
+                    )
+                )
+            logger.info(f"Batch {batch_num}: processed {len(parsed)} items")
+            async with lock:
+                results.extend(batch_results)
 
     tasks = []
     for i, batch_start in enumerate(range(0, len(items), batch_size)):
