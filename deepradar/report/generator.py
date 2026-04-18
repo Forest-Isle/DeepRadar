@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from deepradar.processing.models import ProcessedNewsItem, SourceType
+from deepradar.processing.models import ProcessedNewsItem, SourceResult, SourceType
 from deepradar.report.templates import (
     BLOG_ITEM,
     BLOG_SECTION_HEADER,
@@ -22,6 +22,7 @@ from deepradar.report.templates import (
     SOCIAL_SECTION_HEADER,
     SOCIAL_TWITTER_HEADER,
     SOCIAL_YOUTUBE_HEADER,
+    SOURCE_STATUS_ITEM,
 )
 
 logger = logging.getLogger(__name__)
@@ -166,6 +167,14 @@ def generate_report(
             md += "\n"
 
     # Footer
+    source_results: list[SourceResult] = stats.get("source_results", [])
+    source_status = ""
+    for sr in source_results:
+        if sr.error:
+            source_status += SOURCE_STATUS_ITEM.format(name=sr.name, status=f"ERROR — {sr.error}")
+        else:
+            source_status += SOURCE_STATUS_ITEM.format(name=sr.name, status=f"{sr.item_count} items")
+
     md += REPORT_FOOTER.format(
         total_collected=stats.get("total_collected", 0),
         sources_active=stats.get("sources_active", 0),
@@ -173,6 +182,7 @@ def generate_report(
         items_filtered=stats.get("items_filtered", 0),
         items_in_report=len(items),
         tokens_used=stats.get("tokens_used", 0),
+        source_status=source_status or "- No source data available\n",
         timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
     )
 

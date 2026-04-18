@@ -97,6 +97,8 @@ SOCIAL_YOUTUBE_HEADER = "### From YouTube\n\n"
 
 SOCIAL_ITEM = "- **{source}**: [{title}]({url}) — {summary}\n"
 
+SOURCE_STATUS_ITEM = "- {name}: {status}\n"
+
 REPORT_FOOTER = """
 ---
 
@@ -107,6 +109,9 @@ REPORT_FOOTER = """
 - Items after dedup & filter: {items_filtered}
 - Items in report: {items_in_report}
 - LLM tokens used: {tokens_used}
+
+### Source Status / 数据源状态
+{source_status}
 - Report generated at: {timestamp} UTC
 
 ---
