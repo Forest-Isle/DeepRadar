@@ -39,47 +39,61 @@ def _items_to_json(items: list[RawNewsItem]) -> str:
     return json.dumps(entries, ensure_ascii=False, indent=2)
 
 
-def batch_summarize(
+async def batch_summarize(
     client: LLMClient,
     items: list[RawNewsItem],
     batch_size: int = 12,
+    max_concurrent: int = 3,
 ) -> list[ProcessedNewsItem]:
-    """Process items through Claude API in batches to get summaries, categories, scores."""
+    """Process items through Claude API in concurrent batches."""
+    import asyncio
+
+    sem = asyncio.Semaphore(max_concurrent)
     results: list[ProcessedNewsItem] = []
+    lock = asyncio.Lock()
 
-    for batch_start in range(0, len(items), batch_size):
-        batch = items[batch_start : batch_start + batch_size]
-        items_json = _items_to_json(batch)
-        prompt = BATCH_SUMMARIZE_PROMPT.format(items_json=items_json)
+    async def _process_batch(batch: list[RawNewsItem], batch_num: int) -> None:
+        async with sem:
+            items_json = _items_to_json(batch)
+            prompt = BATCH_SUMMARIZE_PROMPT.format(items_json=items_json)
 
-        try:
-            response = client.complete(SYSTEM_PROMPT, prompt)
-            parsed = _parse_json(response)
+            try:
+                response = await asyncio.to_thread(client.complete, SYSTEM_PROMPT, prompt)
+                parsed = _parse_json(response)
 
-            for entry in parsed:
-                idx = entry.get("index", 0)
-                if idx >= len(batch):
-                    continue
-                raw = batch[idx]
-                results.append(
-                    ProcessedNewsItem(
-                        raw=raw,
-                        summary_en=entry.get("summary_en", ""),
-                        summary_zh=entry.get("summary_zh", ""),
-                        category=entry.get("category", "Other"),
-                        importance_score=float(entry.get("importance_score", 5.0)),
-                        tags=entry.get("tags", []),
-                        why_it_matters=entry.get("why_it_matters", ""),
-                        why_it_matters_zh=entry.get("why_it_matters_zh", ""),
+                batch_results = []
+                for entry in parsed:
+                    idx = entry.get("index", 0)
+                    if idx >= len(batch):
+                        continue
+                    raw = batch[idx]
+                    batch_results.append(
+                        ProcessedNewsItem(
+                            raw=raw,
+                            summary_en=entry.get("summary_en", ""),
+                            summary_zh=entry.get("summary_zh", ""),
+                            category=entry.get("category", "Other"),
+                            importance_score=float(entry.get("importance_score", 5.0)),
+                            tags=entry.get("tags", []),
+                            why_it_matters=entry.get("why_it_matters", ""),
+                            why_it_matters_zh=entry.get("why_it_matters_zh", ""),
+                        )
                     )
-                )
-            logger.info(f"Batch {batch_start // batch_size + 1}: processed {len(parsed)} items")
-        except Exception as e:
-            logger.error(f"LLM batch processing failed: {e}")
-            # Fallback: create items without LLM enrichment
-            for raw in batch:
-                results.append(ProcessedNewsItem(raw=raw))
+                logger.info(f"Batch {batch_num}: processed {len(parsed)} items")
+                async with lock:
+                    results.extend(batch_results)
+            except Exception as e:
+                logger.error(f"LLM batch processing failed: {e}")
+                async with lock:
+                    for raw in batch:
+                        results.append(ProcessedNewsItem(raw=raw))
 
+    tasks = []
+    for i, batch_start in enumerate(range(0, len(items), batch_size)):
+        batch = items[batch_start : batch_start + batch_size]
+        tasks.append(_process_batch(batch, i + 1))
+
+    await asyncio.gather(*tasks)
     return results
 
 
