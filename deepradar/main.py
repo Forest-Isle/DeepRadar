@@ -7,6 +7,7 @@ from datetime import date
 from typing import Any
 
 from deepradar.config import load_config
+from deepradar.notify import send_notification
 from deepradar.llm.client import LLMClient
 from deepradar.llm.tasks import batch_summarize, enrich_github_repos, generate_headline
 from deepradar.processing.dedup import deduplicate
@@ -142,6 +143,21 @@ async def run() -> None:
 
     # Step 5: Publish
     publish_report(report_md, today, config)
+
+    # Step 6: Notify
+    webhook_url = config.get("settings", {}).get("webhook_url", "")
+    if webhook_url:
+        notif_cfg = config.get("settings", {}).get("notifications", {})
+        should_notify = notif_cfg.get("on_success", True)
+        if should_notify:
+            await send_notification(webhook_url, {
+                "date": today,
+                "status": "success",
+                "total_collected": total_collected,
+                "items_in_report": len(processed),
+                "sources": [r.model_dump() for r in source_results],
+            })
+
     logger.info("=== Done ===")
 
 

@@ -40,6 +40,10 @@ def load_config(config_dir: Path | None = None) -> dict[str, Any]:
         cfg["settings"].get("publishing", {}).get("reports_repo", ""),
     )
     cfg["settings"]["reports_repo_token"] = os.environ.get("REPORTS_REPO_TOKEN", os.environ.get("GITHUB_TOKEN", ""))
+    cfg["settings"]["webhook_url"] = os.environ.get(
+        "DEEPRADAR_WEBHOOK_URL",
+        cfg["settings"].get("notifications", {}).get("webhook_url", ""),
+    )
 
     _config = cfg
     return cfg
