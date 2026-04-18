@@ -22,10 +22,13 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量
 
+复制 `.env.example` 为 `.env` 并填写，或直接 export：
+
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
-export REPORTS_REPO="your-username/DeepRadar-Reports"  # 可选
-export REPORTS_REPO_TOKEN="your-github-pat"             # 可选
+export ANTHROPIC_BASE_URL="https://your-relay.example.com"  # 可选，使用中转站时设置
+export REPORTS_REPO="your-username/DeepRadar-Reports"        # 可选
+export REPORTS_REPO_TOKEN="your-github-pat"                  # 可选
 export DEEPRADAR_WEBHOOK_URL="https://hooks.example.com/..."  # 可选
 ```
 
@@ -77,6 +80,7 @@ Options:
 | Variable | 说明 | 示例 |
 |----------|------|------|
 | `REPORTS_REPO` | 报告输出仓库 | `username/DeepRadar-Reports` |
+| `ANTHROPIC_BASE_URL` | LLM 请求端点（可选，使用中转站或兼容 API 时设置） | `https://your-relay.example.com` |
 
 ### 手动触发
 
@@ -98,6 +102,7 @@ Options:
 # settings.yaml
 llm:
   model: "claude-sonnet-4-20250514"
+  base_url: ""                 # 可选，留空使用官方 API；或通过 ANTHROPIC_BASE_URL 环境变量设置
   batch_size: 12
   max_concurrent_batches: 3    # LLM 并发批次数
 
