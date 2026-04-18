@@ -9,6 +9,7 @@ import feedparser
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from deepradar.processing.models import RawNewsItem, SourceType
+from deepradar.processing.utils import strip_html
 from deepradar.sources.base import BaseSource
 
 logger = logging.getLogger(__name__)
@@ -62,10 +63,7 @@ class RssBlogsSource(BaseSource):
                             continue
 
                         summary = entry.get("summary", entry.get("description", ""))
-                        # Strip HTML tags simply
-                        if "<" in summary:
-                            import re
-                            summary = re.sub(r"<[^>]+>", "", summary).strip()
+                        summary = strip_html(summary)
 
                         items.append(
                             RawNewsItem(

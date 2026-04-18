@@ -8,6 +8,7 @@ import feedparser
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from deepradar.processing.models import RawNewsItem, SourceType
+from deepradar.processing.utils import strip_html
 from deepradar.sources.base import BaseSource
 
 logger = logging.getLogger(__name__)
@@ -62,10 +63,7 @@ class TwitterRssSource(BaseSource):
                             if published < cutoff:
                                 continue
 
-                        content = entry.get("summary", entry.get("title", ""))
-                        import re
-                        if "<" in content:
-                            content = re.sub(r"<[^>]+>", "", content).strip()
+                        content = strip_html(entry.get("summary", entry.get("title", "")))
 
                         items.append(
                             RawNewsItem(
