@@ -14,8 +14,13 @@ def publish_report(
     report_md: str,
     date_str: str,
     config: dict[str, Any],
+    extra_files: dict[str, str] | None = None,
 ) -> bool:
-    """Clone the reports repo, write the report, commit and push."""
+    """Clone the reports repo, write the report, commit and push.
+
+    `extra_files` maps repo-relative paths to content (e.g. persisted state);
+    they are committed alongside the report.
+    """
     reports_repo = config.get("settings", {}).get("reports_repo", "")
     token = config.get("settings", {}).get("reports_repo_token", "")
     branch = config.get("settings", {}).get("publishing", {}).get("branch", "main")
@@ -48,6 +53,12 @@ def publish_report(
             # Write report
             report_path = report_dir / f"{date_str}.md"
             report_path.write_text(report_md, encoding="utf-8")
+
+            # Write any extra files (e.g. cross-day dedup state)
+            for rel_path, content in (extra_files or {}).items():
+                fpath = repo_dir / rel_path
+                fpath.parent.mkdir(parents=True, exist_ok=True)
+                fpath.write_text(content, encoding="utf-8")
 
             # Update README index
             _update_readme(repo_dir, date_str)
