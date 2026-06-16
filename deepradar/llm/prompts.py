@@ -28,6 +28,24 @@ Respond ONLY with valid JSON.
 Top items:
 {top_items_json}"""
 
+THEMES_PROMPT = """You are given today's top AI news items. Identify the 3-5 major themes (narrative threads) that connect them — what story is today's AI news telling?
+
+Return JSON:
+{{
+  "themes": [
+    {{
+      "title_en": "short theme title (max 8 words)",
+      "title_zh": "中文主题标题",
+      "summary_zh": "一句话概括这条主线讲了什么（中文，不超过40字）"
+    }}
+  ]
+}}
+
+Order themes by importance. Respond ONLY with valid JSON.
+
+Items:
+{items_json}"""
+
 GITHUB_REPO_PROMPT = """For each trending GitHub repository below, explain in 1-2 sentences why an AI/ML practitioner should care about it. Return a JSON array with:
 - "index": the repo's index number
 - "why_en": 1-2 sentence explanation in English

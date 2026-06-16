@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from deepradar.sources.bluesky import BlueskySource
 from deepradar.processing.models import SourceType
+
+
+def _recent_iso() -> str:
+    return (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
 def _make_config(accounts=None, enabled=True):
@@ -22,7 +27,7 @@ def _make_config(accounts=None, enabled=True):
 
 def _make_post(text="Hello AI world", created_at=None):
     if created_at is None:
-        created_at = "2026-04-18T06:00:00.000Z"
+        created_at = _recent_iso()
     return {
         "post": {
             "uri": "at://did:plc:abc/app.bsky.feed.post/123",

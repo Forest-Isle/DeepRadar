@@ -10,16 +10,20 @@ from typing import Any
 from deepradar.config import load_config
 from deepradar.notify import send_notification
 from deepradar.llm.client import LLMClient
-from deepradar.llm.tasks import batch_summarize, enrich_github_repos, generate_headline
+from deepradar.llm.tasks import batch_summarize, enrich_github_repos, generate_headline, generate_themes
+from deepradar.processing.content_fetch import enrich_content
 from deepradar.processing.dedup import deduplicate
 from deepradar.processing.filter import filter_relevant
 from deepradar.processing.models import RawNewsItem, SourceResult
+from deepradar.processing.state import SeenStore, apply_recurrence, load_seen_store
 from deepradar.publish.github_publisher import publish_report
 from deepradar.report.agent_report import generate_agent_report
 from deepradar.report.generator import generate_report
 from deepradar.sources.arxiv_papers import ArxivSource
 from deepradar.sources.github_trending import GitHubTrendingSource
 from deepradar.sources.hackernews import HackerNewsSource
+from deepradar.sources.hf_papers import HFPapersSource
+from deepradar.sources.newsletters import NewslettersSource
 from deepradar.sources.reddit_rss import RedditRssSource
 from deepradar.sources.rss_blogs import RssBlogsSource
 from deepradar.sources.bluesky import BlueskySource
@@ -48,6 +52,8 @@ def _init_sources(config: dict[str, Any]) -> list:
         RedditRssSource,
         YouTubeRssSource,
         BlueskySource,
+        NewslettersSource,
+        HFPapersSource,
     ]
     sources = []
     for cls in source_classes:
@@ -117,16 +123,24 @@ async def run(args: argparse.Namespace | None = None) -> None:
     filtered = filter_relevant(deduped, config, min_score=min_score)
     logger.info(f"After processing: {len(filtered)} items")
 
+    # Load cross-day dedup state before enrichment so it can demote reruns later
+    state_cfg = config.get("settings", {}).get("dedup_state", {})
+    state_enabled = state_cfg.get("enabled", True)
+    seen_store = await load_seen_store(config) if state_enabled else SeenStore({})
+
     # Step 3: LLM enrichment
     api_key = config.get("settings", {}).get("anthropic_api_key", "")
     if api_key:
         logger.info("Starting LLM processing...")
+        await enrich_content(filtered, config)
         client = LLMClient(config)
         batch_size = config.get("settings", {}).get("llm", {}).get("batch_size", 12)
         max_concurrent = config.get("settings", {}).get("llm", {}).get("max_concurrent_batches", 3)
         processed = await batch_summarize(client, filtered, batch_size=batch_size, max_concurrent=max_concurrent)
         enrich_github_repos(client, processed)
-        headline = generate_headline(client, processed)
+        ranked = sorted(processed, key=lambda x: x.importance_score, reverse=True)
+        headline = generate_headline(client, ranked)
+        themes = generate_themes(client, ranked)
         usage = client.get_usage_stats()
         logger.info(f"LLM usage: {usage}")
     else:
@@ -145,7 +159,16 @@ async def run(args: argparse.Namespace | None = None) -> None:
             "summary_en": "Today's AI news digest.",
             "summary_zh": "今日 AI 新闻摘要。",
         }
+        themes = []
         usage = {"total_tokens": 0}
+
+    # Demote items already reported on a prior day, then record today's set
+    seen_state_files: dict[str, str] = {}
+    if state_enabled:
+        apply_recurrence(processed, seen_store, config, today)
+        seen_store.mark(processed, today)
+        seen_store.prune(today, state_cfg.get("ttl_days", 30))
+        seen_state_files["state/seen.json"] = seen_store.dumps()
 
     # Step 4: Generate report
     stats = {
@@ -156,13 +179,13 @@ async def run(args: argparse.Namespace | None = None) -> None:
         "tokens_used": usage.get("total_tokens", 0),
         "source_results": source_results,
     }
-    report_md = generate_report(processed, today, headline, stats, config)
+    report_md = generate_report(processed, today, headline, stats, config, themes=themes)
     logger.info(f"Report generated: {len(report_md)} characters")
 
     agent_report_md = generate_agent_report(processed, today)
 
     # Step 5: Publish
-    publish_report(report_md, today, config)
+    publish_report(report_md, today, config, extra_files=seen_state_files)
 
     # Write standalone agent report
     from pathlib import Path

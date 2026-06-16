@@ -116,3 +116,30 @@ def test_report_contains_agent_section_when_agent_items_present():
 def test_report_no_agent_section_when_no_agent_items():
     md = generate_report([], "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
     assert "AI Agent 专题" not in md
+
+
+def test_report_contains_tldr_table():
+    items = [_make_processed(SourceType.HACKERNEWS, "Big AI News", score=8.0)]
+    md = generate_report(items, "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
+    assert "速览 / TL;DR" in md
+    assert "| # | 标题 |" in md
+    assert "Big AI News" in md
+
+
+def test_report_renders_threads_when_provided():
+    themes = [{"title_en": "Agents everywhere", "title_zh": "智能体爆发", "summary_zh": "今天主线是 agent"}]
+    md = generate_report([], "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG, themes=themes)
+    assert "今日主线" in md
+    assert "智能体爆发" in md
+
+
+def test_report_no_threads_without_themes():
+    md = generate_report([], "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
+    assert "今日主线" not in md
+
+
+def test_tldr_escapes_pipe_in_title():
+    items = [_make_processed(SourceType.HACKERNEWS, "A | B title", score=7.0)]
+    md = generate_report(items, "2026-04-18", HEADLINE, {}, MINIMAL_CONFIG)
+    # pipe in title must not break the table row
+    assert "A / B title" in md

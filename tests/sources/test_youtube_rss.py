@@ -1,18 +1,23 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from deepradar.sources.youtube_rss import YouTubeRssSource
 
-_SAMPLE_FEED = """<?xml version="1.0" encoding="UTF-8"?>
+
+def _sample_feed(published=None):
+    if published is None:
+        published = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015">
   <entry>
     <title>Amazing AI Video</title>
     <link href="https://www.youtube.com/watch?v=abc123"/>
     <yt:videoId>abc123</yt:videoId>
-    <published>2026-04-18T05:00:00+00:00</published>
+    <published>{published}</published>
     <summary>Great summary</summary>
   </entry>
 </feed>"""
@@ -47,7 +52,7 @@ async def test_fetch_from_youtube_primary():
 
     with patch("aiohttp.ClientSession") as mock_session_cls:
         mock_session = AsyncMock()
-        mock_session.get.return_value = _mock_resp(200, _SAMPLE_FEED)
+        mock_session.get.return_value = _mock_resp(200, _sample_feed())
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock(return_value=False)
         mock_session_cls.return_value = mock_session
@@ -69,7 +74,7 @@ async def test_fetch_falls_back_to_invidious():
     async def mock_get(url, **kwargs):
         if "youtube.com" in url:
             return _mock_resp(403, "")
-        return _mock_resp(200, _SAMPLE_FEED)
+        return _mock_resp(200, _sample_feed())
 
     with patch("aiohttp.ClientSession") as mock_session_cls:
         mock_session = AsyncMock()

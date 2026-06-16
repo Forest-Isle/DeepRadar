@@ -4,13 +4,16 @@
 
 ## Features
 
-- **7 大数据源**: GitHub Trending, Hacker News, arXiv, RSS 博客, Twitter/X, Reddit, YouTube
-- **AI 智能处理**: Claude API 自动摘要、分类、评分、中英双语翻译
+- **9 大数据源**: GitHub Trending, Hacker News, arXiv, HF Daily Papers, RSS 博客, 策展 Newsletter（smol.ai / Import AI / Latent Space 等）, Reddit, YouTube, Bluesky
+- **正文抓取**: 对相关性 top-N 条目自动抓取原文正文（trafilatura），喂 LLM 生成高保真摘要
+- **跨日去重**: 记录已报条目，重复事件软降级并标「持续热点」，避免同一事件多日刷屏
+- **智能排序**: 关键词词边界匹配（消除 `ai` 命中 `said` 等假阳性）+ 源可信度加权，官方/策展源优先
+- **AI 智能处理**: Claude API 自动摘要、分类、评分、中英双语翻译、主题聚合
+- **高密度报告**: 今日主线（5 条叙事）+ 一句话速览表 + 结构化 Markdown 日报，自动推送到独立仓库
 - **自动化运行**: GitHub Actions 每日定时执行
-- **精美报告**: 结构化 Markdown 日报，自动推送到独立仓库
 - **灵活 CLI**: 支持 `--dry-run`、`--no-llm`、`--sources` 等参数，方便调试和定制
 - **Webhook 通知**: 运行完成后可推送 Slack / 飞书 / Discord 等通知
-- **完善测试**: 43 个单元测试覆盖核心模块
+- **完善测试**: 97 个单元测试覆盖核心模块
 
 ## Quick Start
 
@@ -62,7 +65,7 @@ Options:
   --no-llm              跳过 LLM 处理（用于测试）
 ```
 
-可用数据源名称: `hackernews`, `arxiv`, `rss_blogs`, `github_trending`, `reddit_rss`, `youtube_rss`, `twitter_rss`
+可用数据源名称: `hackernews`, `arxiv`, `hf_papers`, `rss_blogs`, `newsletters`, `github_trending`, `reddit_rss`, `youtube_rss`, `bluesky`
 
 ## GitHub Actions 自动化
 
@@ -110,6 +113,23 @@ report:
   min_importance_score: 3.0    # 最低相关性分数阈值
   max_news_items: 15
 
+content_fetch:
+  enabled: true
+  top_n: 25                    # 仅对相关性 top-N 抓取原文正文
+  max_chars: 4000              # 正文喂 LLM 前的截断长度
+
+dedup_state:                   # 跨日去重（状态存于 reports 仓 state/seen.json）
+  enabled: true
+  ttl_days: 30                 # 已报条目保留天数
+  demote_factor: 0.4           # 重复事件降权系数
+
+source_credibility:            # 各源相关性加成，官方/策展源优先
+  newsletter: 4.0
+  rss_blog: 3.0
+  hf_paper: 3.0
+  bluesky: 2.0
+  arxiv: 1.0
+
 notifications:
   webhook_url: ""              # 或通过 DEEPRADAR_WEBHOOK_URL 环境变量设置
   on_success: true
@@ -123,19 +143,23 @@ deepradar/
 ├── main.py              # 主编排器 + CLI
 ├── config.py            # 配置加载 + 环境变量
 ├── notify.py            # Webhook 通知
-├── sources/             # 7 个数据源采集模块
+├── sources/             # 数据源采集模块
 │   ├── base.py          # 数据源基类
 │   ├── hackernews.py
 │   ├── arxiv_papers.py
+│   ├── hf_papers.py     # HF Daily Papers（JSON API，按 upvotes 策展）
 │   ├── github_trending.py
 │   ├── rss_blogs.py
+│   ├── newsletters.py   # 策展 newsletter（smol.ai / Import AI / ...）
 │   ├── reddit_rss.py
-│   ├── twitter_rss.py
-│   └── youtube_rss.py
+│   ├── youtube_rss.py
+│   └── bluesky.py
 ├── processing/          # 数据处理
 │   ├── models.py        # 数据模型 (RawNewsItem, ProcessedNewsItem, SourceResult)
 │   ├── dedup.py         # URL + 标题模糊去重
-│   ├── filter.py        # 相关性评分 + 过滤
+│   ├── content_fetch.py # 正文抓取 + 抽取 (trafilatura)
+│   ├── state.py         # 跨日去重状态 (SeenStore, 持续热点降权)
+│   ├── filter.py        # 相关性评分（词边界 + 源可信度）+ 过滤
 │   ├── keywords.py      # 配置驱动的 AI 关键词匹配
 │   └── utils.py         # 共享工具 (strip_html)
 ├── llm/                 # Claude API 集成

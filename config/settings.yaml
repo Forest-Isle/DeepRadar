@@ -12,6 +12,29 @@ report:
   max_social_items: 10
   min_importance_score: 3.0
 
+content_fetch:
+  enabled: true
+  top_n: 25               # only fetch bodies for the top-N items by relevance
+  min_existing_chars: 600 # skip items that already have enough content
+  max_chars: 4000         # truncate extracted body before LLM
+  timeout: 15
+  concurrency: 8
+
+dedup_state:
+  enabled: true
+  ttl_days: 30            # forget items not seen for this many days
+  demote_factor: 0.4      # multiply importance of flat reruns
+  escalation_factor: 1.5  # engagement must grow this much to stay at full weight
+  escalation_min_delta: 50
+
+# Relevance bonus by source — official/curated sources outrank community chatter
+source_credibility:
+  newsletter: 4.0
+  rss_blog: 3.0
+  hf_paper: 3.0
+  bluesky: 2.0
+  arxiv: 1.0
+
 publishing:
   reports_repo: ""  # Override via REPORTS_REPO env var
   branch: "main"

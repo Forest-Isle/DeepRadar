@@ -8,6 +8,7 @@ from deepradar.processing.models import ProcessedNewsItem, SourceResult, SourceT
 from deepradar.report.templates import (
     BLOG_ITEM,
     BLOG_SECTION_HEADER,
+    CURATED_SECTION_HEADER,
     GITHUB_DETAIL,
     GITHUB_SECTION_HEADER,
     GITHUB_TABLE_ROW,
@@ -23,6 +24,10 @@ from deepradar.report.templates import (
     SOCIAL_TWITTER_HEADER,
     SOCIAL_YOUTUBE_HEADER,
     SOURCE_STATUS_ITEM,
+    THREAD_ITEM,
+    THREADS_SECTION,
+    TLDR_ROW,
+    TLDR_SECTION,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,12 +37,62 @@ def _sort_by_importance(items: list[ProcessedNewsItem]) -> list[ProcessedNewsIte
     return sorted(items, key=lambda x: x.importance_score, reverse=True)
 
 
+def _recurrence_badge(item: ProcessedNewsItem) -> str:
+    """Badge marking an item already reported on a prior day."""
+    rec = item.raw.metadata.get("recurring")
+    if not rec:
+        return ""
+    days = rec.get("days", 1)
+    if rec.get("escalated"):
+        return f" 🔥 持续热点↑ {days}天"
+    return f" 🔁 持续 {days}天"
+
+
+def _cell(text: str, limit: int) -> str:
+    """Sanitize text for a Markdown table cell."""
+    text = (text or "").replace("\n", " ").replace("|", "/").strip()
+    return text[:limit] + ("…" if len(text) > limit else "")
+
+
+def _render_threads(themes: list[dict[str, str]]) -> str:
+    if not themes:
+        return ""
+    rows = ""
+    for idx, t in enumerate(themes, 1):
+        rows += THREAD_ITEM.format(
+            idx=idx,
+            title_zh=t.get("title_zh", ""),
+            title_en=t.get("title_en", ""),
+            summary_zh=t.get("summary_zh", ""),
+        )
+    return THREADS_SECTION.format(threads=rows)
+
+
+def _render_tldr(items: list[ProcessedNewsItem], limit: int = 12) -> str:
+    top = _sort_by_importance(items)[:limit]
+    if not top:
+        return ""
+    rows = ""
+    for idx, item in enumerate(top, 1):
+        oneliner = item.summary_zh or item.why_it_matters_zh or item.raw.content
+        rows += TLDR_ROW.format(
+            idx=idx,
+            title=_cell(item.raw.title, 60),
+            url=item.raw.url,
+            oneliner=_cell(oneliner, 44),
+            source=_cell(item.raw.source_name, 18),
+            score=f"{item.importance_score:.1f}",
+        )
+    return TLDR_SECTION.format(rows=rows)
+
+
 def generate_report(
     items: list[ProcessedNewsItem],
     date_str: str,
     headline: dict[str, str],
     stats: dict[str, Any],
     config: dict[str, Any],
+    themes: list[dict[str, str]] | None = None,
 ) -> str:
     """Generate the full Markdown report."""
     report_cfg = config.get("settings", {}).get("report", {})
@@ -49,8 +104,11 @@ def generate_report(
     # Group items by source type
     github_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.GITHUB])
     hn_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.HACKERNEWS])
-    arxiv_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.ARXIV])
+    arxiv_items = _sort_by_importance(
+        [i for i in items if i.raw.source in (SourceType.ARXIV, SourceType.HF_PAPER)]
+    )
     blog_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.RSS_BLOG])
+    newsletter_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.NEWSLETTER])
     twitter_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.TWITTER])
     reddit_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.REDDIT])
     youtube_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.YOUTUBE])
@@ -65,6 +123,10 @@ def generate_report(
         summary_en=headline.get("summary_en", ""),
         summary_zh=headline.get("summary_zh", ""),
     )
+
+    # Narrative threads + TL;DR table (high-density top-of-report)
+    md += _render_threads(themes or [])
+    md += _render_tldr(items)
 
     # GitHub Repos
     if github_items:
@@ -99,6 +161,7 @@ def generate_report(
             source_label = item.raw.source_name
             if also_on:
                 source_label += f" (also on {', '.join(also_on)})"
+            source_label += _recurrence_badge(item)
 
             md += NEWS_ITEM.format(
                 idx=idx,
@@ -119,7 +182,7 @@ def generate_report(
         for idx, item in enumerate(arxiv_items[:max_papers], 1):
             md += PAPER_ITEM.format(
                 idx=idx,
-                title=item.raw.title,
+                title=item.raw.title + _recurrence_badge(item),
                 url=item.raw.url,
                 authors=item.raw.metadata.get("authors", "—"),
                 categories=", ".join(item.raw.metadata.get("categories", [])),
@@ -133,6 +196,18 @@ def generate_report(
         for item in blog_items:
             md += BLOG_ITEM.format(
                 title=item.raw.title,
+                url=item.raw.url,
+                source=item.raw.source_name,
+                summary_en=item.summary_en,
+                summary_zh=item.summary_zh,
+            )
+
+    # Curated Digests (newsletters)
+    if newsletter_items:
+        md += CURATED_SECTION_HEADER
+        for item in newsletter_items:
+            md += BLOG_ITEM.format(
+                title=item.raw.title + _recurrence_badge(item),
                 url=item.raw.url,
                 source=item.raw.source_name,
                 summary_en=item.summary_en,
@@ -173,7 +248,7 @@ def generate_report(
         for item in agent_items[:10]:
             source = item.raw.source_name
             summary = item.summary_zh or item.summary_en or ""
-            md += f"- **[{item.raw.title}]({item.raw.url})** ({source})"
+            md += f"- **[{item.raw.title}]({item.raw.url})** ({source}){_recurrence_badge(item)}"
             if summary:
                 md += f" — {summary}"
             md += "\n"

@@ -12,6 +12,7 @@ from deepradar.llm.prompts import (
     DAILY_HEADLINE_PROMPT,
     GITHUB_REPO_PROMPT,
     SYSTEM_PROMPT,
+    THEMES_PROMPT,
 )
 from deepradar.processing.models import ProcessedNewsItem, RawNewsItem, SourceType
 
@@ -43,12 +44,14 @@ def _parse_json(text: str) -> Any:
 def _items_to_json(items: list[RawNewsItem]) -> str:
     entries = []
     for i, item in enumerate(items):
+        # Give the LLM the full fetched article body; thin RSS/title content stays capped.
+        cap = 2000 if item.metadata.get("content_fetched") else 500
         entries.append({
             "index": i,
             "title": item.title,
             "source": item.source_name,
             "url": item.url,
-            "content": item.content[:500],
+            "content": item.content[:cap],
         })
     return json.dumps(entries, ensure_ascii=False, indent=2)
 
@@ -148,6 +151,30 @@ def generate_headline(client: LLMClient, top_items: list[ProcessedNewsItem]) -> 
             "summary_en": "Today's AI news digest.",
             "summary_zh": "今日 AI 新闻摘要。",
         }
+
+
+def generate_themes(client: LLMClient, top_items: list[ProcessedNewsItem], max_items: int = 20) -> list[dict[str, str]]:
+    """Cluster the day's top items into 3-5 narrative threads."""
+    if not top_items:
+        return []
+    entries = []
+    for item in top_items[:max_items]:
+        entries.append({
+            "title": item.raw.title,
+            "summary": item.summary_en or item.raw.content[:200],
+            "category": item.category,
+        })
+    items_json = json.dumps(entries, ensure_ascii=False, indent=2)
+    prompt = THEMES_PROMPT.format(items_json=items_json)
+
+    try:
+        response = client.complete(SYSTEM_PROMPT, prompt)
+        parsed = _parse_json(response)
+        themes = parsed.get("themes", []) if isinstance(parsed, dict) else []
+        return [t for t in themes if isinstance(t, dict)]
+    except Exception as e:
+        logger.error(f"Failed to generate themes: {e}")
+        return []
 
 
 def enrich_github_repos(client: LLMClient, items: list[ProcessedNewsItem]) -> None:

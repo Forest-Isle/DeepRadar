@@ -16,6 +16,8 @@ class SourceType(str, Enum):
     BLUESKY = "bluesky"
     REDDIT = "reddit"
     YOUTUBE = "youtube"
+    NEWSLETTER = "newsletter"
+    HF_PAPER = "hf_paper"
 
 
 class RawNewsItem(BaseModel):

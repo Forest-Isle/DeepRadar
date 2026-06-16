@@ -52,6 +52,55 @@ def test_engagement_boost():
     assert result[0].metadata["relevance_score"] > 5.0
 
 
+def test_word_boundary_avoids_substring_false_positives():
+    # "said", "chairman", "maintain" all contain the substring "ai" but are not AI.
+    item = _make_item("The chairman said we must maintain quality")
+    result = filter_relevant([item], SAMPLE_CONFIG, min_score=2.0)
+    assert result == []
+
+
+def test_word_boundary_gpt_does_not_match_gpts():
+    config = {
+        "categories": {
+            "ai_relevance_keywords": {"high": [], "medium": [], "low": []},
+            "categories": [{"name": "LLM", "keywords": ["gpt"], "weight": 1.0}],
+        }
+    }
+    item = _make_item("Lots of GPTs in the store")
+    result = filter_relevant([item], config, min_score=0.5)
+    assert result == []
+
+
+def test_source_credibility_ranks_official_first():
+    config = {
+        "categories": {
+            "ai_relevance_keywords": {"high": ["ai"], "medium": [], "low": []},
+            "categories": [],
+        },
+        "settings": {"source_credibility": {"rss_blog": 5.0}},
+    }
+    community = RawNewsItem(
+        source=SourceType.HACKERNEWS, source_name="HN", title="AI thing", url="https://a/1", metadata={"score": 0}
+    )
+    official = RawNewsItem(
+        source=SourceType.RSS_BLOG, source_name="OpenAI Blog", title="AI thing", url="https://a/2"
+    )
+    result = filter_relevant([community, official], config, min_score=0.0)
+    assert result[0].source_name == "OpenAI Blog"
+    assert result[0].metadata["relevance_score"] > result[1].metadata["relevance_score"]
+
+
+def test_hf_upvotes_boost_relevance():
+    config = {
+        "categories": {"ai_relevance_keywords": {"high": ["ai"], "medium": [], "low": []}, "categories": []},
+    }
+    item = RawNewsItem(
+        source=SourceType.HF_PAPER, source_name="HF", title="AI paper", url="https://a/1", metadata={"upvotes": 150}
+    )
+    result = filter_relevant([item], config, min_score=0.0)
+    assert result[0].metadata["relevance_score"] >= 6.0  # 3 (ai) + 3 (upvotes>100)
+
+
 def test_filter_marks_agent_items(sample_config):
     from deepradar.processing.filter import filter_relevant
     from deepradar.processing.models import RawNewsItem, SourceType

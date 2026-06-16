@@ -54,6 +54,28 @@ rss_blogs:
       url: "https://microsoft.github.io/autogen/blog/rss.xml"
   lookback_hours: 48
 
+newsletters:
+  enabled: true
+  feeds:
+    - name: "AI News (smol.ai)"
+      url: "https://news.smol.ai/rss.xml"
+    - name: "Import AI"
+      url: "https://importai.substack.com/feed"
+    - name: "Latent Space"
+      url: "https://www.latent.space/feed"
+    - name: "Interconnects"
+      url: "https://www.interconnects.ai/feed"
+    - name: "Ahead of AI"
+      url: "https://magazine.sebastianraschka.com/feed"
+  lookback_hours: 240   # newsletters publish irregularly; widen to catch the latest issue
+  max_items_per_feed: 3
+
+hf_papers:
+  enabled: true
+  api_url: "https://huggingface.co/api/daily_papers"
+  max_results: 30
+  min_upvotes: 3
+
 bluesky:
   enabled: true
   accounts:

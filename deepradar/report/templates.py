@@ -18,6 +18,24 @@ REPORT_HEADER = """# 🔭 DeepRadar AI Daily — {date}
 ---
 """
 
+THREADS_SECTION = """## 🧭 今日主线 / Today's Threads
+
+{threads}
+---
+"""
+
+THREAD_ITEM = "{idx}. **{title_zh}** · {title_en} — {summary_zh}\n"
+
+TLDR_SECTION = """## ⚡ 速览 / TL;DR
+
+| # | 标题 | 一句话 | 源 | 分 |
+|---|------|--------|-----|-----|
+{rows}
+---
+"""
+
+TLDR_ROW = "| {idx} | [{title}]({url}) | {oneliner} | {source} | {score} |\n"
+
 GITHUB_SECTION_HEADER = """## 🔥 Hot GitHub Repos / 热门 GitHub 项目
 
 | # | Repository | ⭐ Today | Total Stars | Language | Category |
@@ -82,6 +100,14 @@ BLOG_ITEM = """### [{title}]({url})
 {summary_en}
 
 {summary_zh}
+
+"""
+
+CURATED_SECTION_HEADER = """---
+
+## 📬 Curated Digests / 策展精选
+
+> 高密度人工策展源（smol.ai、Import AI、Latent Space 等）
 
 """
 

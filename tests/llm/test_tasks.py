@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from deepradar.llm.tasks import _parse_json, batch_summarize
-from deepradar.processing.models import RawNewsItem, SourceType
+from deepradar.llm.tasks import _parse_json, batch_summarize, generate_themes
+from deepradar.processing.models import ProcessedNewsItem, RawNewsItem, SourceType
 
 
 def test_parse_json_plain():
@@ -100,6 +100,30 @@ def test_parse_json_trailing_comma_repaired():
 def test_parse_json_completely_invalid_raises():
     with pytest.raises(Exception):
         _parse_json("this is not json at all !@#$")
+
+
+def _make_processed(title: str = "Item", score: float = 8.0) -> ProcessedNewsItem:
+    return ProcessedNewsItem(raw=_make_raw_item(title), summary_en="s", importance_score=score)
+
+
+def test_generate_themes_parses_themes():
+    client = MagicMock()
+    client.complete.return_value = json.dumps(
+        {"themes": [{"title_en": "Agents", "title_zh": "智能体", "summary_zh": "今天都在聊 agent"}]}
+    )
+    themes = generate_themes(client, [_make_processed()])
+    assert len(themes) == 1
+    assert themes[0]["title_zh"] == "智能体"
+
+
+def test_generate_themes_empty_on_error():
+    client = MagicMock()
+    client.complete.side_effect = RuntimeError("API down")
+    assert generate_themes(client, [_make_processed()]) == []
+
+
+def test_generate_themes_empty_input():
+    assert generate_themes(MagicMock(), []) == []
 
 
 @pytest.mark.asyncio
