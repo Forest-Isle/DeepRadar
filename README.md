@@ -4,7 +4,8 @@
 
 ## Features
 
-- **9 大数据源**: GitHub Trending, Hacker News, arXiv, HF Daily Papers, RSS 博客, 策展 Newsletter（smol.ai / Import AI / Latent Space 等）, Reddit, YouTube, Bluesky
+- **10 大数据源**: GitHub Trending, Hacker News, arXiv, HF Daily Papers, RSS 博客, 策展 Newsletter（smol.ai / Import AI / Latent Space 等）, 中文源（量子位 / 雷锋网 / InfoQ）, Reddit, YouTube, Bluesky
+- **中英双向覆盖**: 中文源 + 中文关键词识别（人工智能 / 大模型 / 智能体…），打破中英信息差
 - **正文抓取**: 对相关性 top-N 条目自动抓取原文正文（trafilatura），喂 LLM 生成高保真摘要
 - **跨日去重**: 记录已报条目，重复事件软降级并标「持续热点」，避免同一事件多日刷屏
 - **智能排序**: 关键词词边界匹配（消除 `ai` 命中 `said` 等假阳性）+ 源可信度加权，官方/策展源优先
@@ -65,7 +66,7 @@ Options:
   --no-llm              跳过 LLM 处理（用于测试）
 ```
 
-可用数据源名称: `hackernews`, `arxiv`, `hf_papers`, `rss_blogs`, `newsletters`, `github_trending`, `reddit_rss`, `youtube_rss`, `bluesky`
+可用数据源名称: `hackernews`, `arxiv`, `hf_papers`, `rss_blogs`, `newsletters`, `china_sources`, `github_trending`, `reddit_rss`, `youtube_rss`, `bluesky`
 
 ## GitHub Actions 自动化
 
@@ -127,6 +128,7 @@ source_credibility:            # 各源相关性加成，官方/策展源优先
   newsletter: 4.0
   rss_blog: 3.0
   hf_paper: 3.0
+  china: 3.0
   bluesky: 2.0
   arxiv: 1.0
 
@@ -151,6 +153,7 @@ deepradar/
 │   ├── github_trending.py
 │   ├── rss_blogs.py
 │   ├── newsletters.py   # 策展 newsletter（smol.ai / Import AI / ...）
+│   ├── china_sources.py # 中文 AI 资讯（量子位 / 雷锋网 / InfoQ）
 │   ├── reddit_rss.py
 │   ├── youtube_rss.py
 │   └── bluesky.py

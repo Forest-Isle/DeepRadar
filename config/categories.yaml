@@ -54,6 +54,6 @@ categories:
     weight: 1.5
 
 ai_relevance_keywords:
-  high: ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "claude", "gemini"]
-  medium: ["model", "training", "inference", "dataset", "benchmark", "transformer", "diffusion", "embedding"]
-  low: ["automation", "data science", "analytics"]
+  high: ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "claude", "gemini", "人工智能", "大模型", "大语言模型", "智能体", "多模态", "深度学习", "神经网络", "机器学习"]
+  medium: ["model", "training", "inference", "dataset", "benchmark", "transformer", "diffusion", "embedding", "模型", "训练", "推理", "微调", "开源模型", "具身", "扩散模型"]
+  low: ["automation", "data science", "analytics", "算力", "数据集"]

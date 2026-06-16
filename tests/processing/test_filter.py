@@ -90,6 +90,22 @@ def test_source_credibility_ranks_official_first():
     assert result[0].metadata["relevance_score"] > result[1].metadata["relevance_score"]
 
 
+def test_chinese_keyword_matched_as_substring():
+    # CJK has no word boundaries; \b would never match inside Chinese text.
+    config = {
+        "categories": {
+            "ai_relevance_keywords": {"high": ["人工智能", "大模型"], "medium": [], "low": []},
+            "categories": [],
+        }
+    }
+    item = RawNewsItem(
+        source=SourceType.CHINA, source_name="量子位", title="阿里发布人工智能大模型", url="https://a/1"
+    )
+    result = filter_relevant([item], config, min_score=2.0)
+    assert len(result) == 1
+    assert result[0].metadata["relevance_score"] >= 6.0  # 人工智能(3) + 大模型(3)
+
+
 def test_hf_upvotes_boost_relevance():
     config = {
         "categories": {"ai_relevance_keywords": {"high": ["ai"], "medium": [], "low": []}, "categories": []},

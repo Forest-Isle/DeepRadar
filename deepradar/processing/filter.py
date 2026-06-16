@@ -17,6 +17,9 @@ def _kw_pattern(keyword: str) -> re.Pattern[str]:
 
 
 def _has_keyword(text: str, keyword: str) -> bool:
+    # CJK has no word boundaries, so \b would never match inside Chinese text.
+    if not keyword.isascii():
+        return keyword in text
     return _kw_pattern(keyword).search(text) is not None
 
 

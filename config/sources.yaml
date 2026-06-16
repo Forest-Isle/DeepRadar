@@ -76,6 +76,18 @@ hf_papers:
   max_results: 30
   min_upvotes: 3
 
+china_sources:
+  enabled: true
+  feeds:
+    - name: "量子位"
+      url: "https://www.qbitai.com/feed"
+    - name: "雷锋网"
+      url: "https://www.leiphone.com/feed"
+    - name: "InfoQ 中国"
+      url: "https://www.infoq.cn/feed"
+  lookback_hours: 48
+  max_items_per_feed: 8
+
 bluesky:
   enabled: true
   accounts:

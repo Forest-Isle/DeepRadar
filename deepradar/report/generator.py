@@ -8,6 +8,7 @@ from deepradar.processing.models import ProcessedNewsItem, SourceResult, SourceT
 from deepradar.report.templates import (
     BLOG_ITEM,
     BLOG_SECTION_HEADER,
+    CHINA_SECTION_HEADER,
     CURATED_SECTION_HEADER,
     GITHUB_DETAIL,
     GITHUB_SECTION_HEADER,
@@ -109,6 +110,7 @@ def generate_report(
     )
     blog_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.RSS_BLOG])
     newsletter_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.NEWSLETTER])
+    china_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.CHINA])
     twitter_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.TWITTER])
     reddit_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.REDDIT])
     youtube_items = _sort_by_importance([i for i in items if i.raw.source == SourceType.YOUTUBE])
@@ -212,6 +214,18 @@ def generate_report(
                 source=item.raw.source_name,
                 summary_en=item.summary_en,
                 summary_zh=item.summary_zh,
+            )
+
+    # China AI (Chinese-language sources)
+    if china_items:
+        md += CHINA_SECTION_HEADER
+        for item in china_items:
+            md += BLOG_ITEM.format(
+                title=item.raw.title + _recurrence_badge(item),
+                url=item.raw.url,
+                source=item.raw.source_name,
+                summary_en=item.summary_zh or item.summary_en,
+                summary_zh="",
             )
 
     # Social Media Highlights

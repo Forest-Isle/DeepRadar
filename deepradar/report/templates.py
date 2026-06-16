@@ -111,6 +111,14 @@ CURATED_SECTION_HEADER = """---
 
 """
 
+CHINA_SECTION_HEADER = """---
+
+## 🇨🇳 中文前沿 / China AI
+
+> 国内 AI 资讯（量子位、雷锋网、InfoQ 等）
+
+"""
+
 SOCIAL_SECTION_HEADER = """---
 
 ## 💬 Social Media Highlights / 社交媒体热点

@@ -27,6 +27,7 @@ from deepradar.sources.newsletters import NewslettersSource
 from deepradar.sources.reddit_rss import RedditRssSource
 from deepradar.sources.rss_blogs import RssBlogsSource
 from deepradar.sources.bluesky import BlueskySource
+from deepradar.sources.china_sources import ChinaSourcesSource
 from deepradar.sources.youtube_rss import YouTubeRssSource
 
 logger = logging.getLogger("deepradar")
@@ -54,6 +55,7 @@ def _init_sources(config: dict[str, Any]) -> list:
         BlueskySource,
         NewslettersSource,
         HFPapersSource,
+        ChinaSourcesSource,
     ]
     sources = []
     for cls in source_classes:

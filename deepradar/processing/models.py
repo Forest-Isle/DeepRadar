@@ -18,6 +18,7 @@ class SourceType(str, Enum):
     YOUTUBE = "youtube"
     NEWSLETTER = "newsletter"
     HF_PAPER = "hf_paper"
+    CHINA = "china"
 
 
 class RawNewsItem(BaseModel):

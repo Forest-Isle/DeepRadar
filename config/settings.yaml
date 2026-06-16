@@ -32,6 +32,7 @@ source_credibility:
   newsletter: 4.0
   rss_blog: 3.0
   hf_paper: 3.0
+  china: 3.0
   bluesky: 2.0
   arxiv: 1.0
 
